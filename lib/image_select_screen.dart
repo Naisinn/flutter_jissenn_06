@@ -3,6 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as image_lib;
+import 'package:flutter_jissenn_06/edit_snap_screen.dart';
 
 class ImageSelectScreen extends StatefulWidget {
   const ImageSelectScreen({super.key});
@@ -12,9 +13,52 @@ class ImageSelectScreen extends StatefulWidget {
 }
 
 class _ImageSelectScreenState extends State<ImageSelectScreen> {
+  /* ◆ ImagePicker image_pickerパッケージが提供するクラス
+     画像ライブラリやカメラにアクセスする機能を持つ */
+  final ImagePicker _picker = ImagePicker();
+
+  /* ◆ Uint8List
+     8bit 符号なし整数のリスト */
+  Uint8List? _imageBitmap; // ❺
+
+  Future<void> _selectImage() async { // ❻
+    /* ◆ XFile
+       ファイルの抽象化クラス */
+    // 画像を選択する
+    final XFile? imageFile = await _picker.pickImage(source: ImageSource.gallery); // ❼
+
+    // ファイルオブジェクトから画像データを取得する
+    final imageBitmap = await imageFile?.readAsBytes();
+    // ignore: unnecessary_null_comparison
+    assert(imageBitmap != null);
+    if (imageBitmap == null) return;
+
+    // 画像データをデコードする
+    final image = image_lib.decodeImage(imageBitmap);
+    // ignore: unnecessary_null_comparison
+    assert(image != null);
+    if (image == null) return;
+
+    /* ◆ Image 画像データとメタデータを内包したクラス */
+    late final image_lib.Image resizedImage;
+    if (image.width > image.height) {
+      // 横長の画像なら横幅を500pxにリサイズする
+      resizedImage = image_lib.copyResize(image, width: 500);
+    } else {
+      // 縦長の画像なら縦幅を500pxにリサイズする
+      resizedImage = image_lib.copyResize(image, height: 500);
+    }
+
+    // 画像をエンコードして状態を更新する
+    setState(() {
+      _imageBitmap = image_lib.encodeBmp(resizedImage);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
+    final imageBitmap = _imageBitmap;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -24,16 +68,28 @@ class _ImageSelectScreenState extends State<ImageSelectScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (imageBitmap != null) Image.memory(imageBitmap),
             ElevatedButton(
               // 「画像を選ぶ」ボタン
-              onPressed: () {},
+              onPressed: () {
+                _selectImage();
+              },
               child: Text(l10n.imageSelect),
             ),
-            ElevatedButton(
-              // 「画像を編集する」ボタン
-              onPressed: () {},
-              child: Text(l10n.imageEdit),
-            ),
+            if (imageBitmap != null)
+              ElevatedButton(
+                // 「画像を編集する」ボタン
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ImageEditScreen(
+                        imageBitmap: imageBitmap,
+                      ),
+                    ),
+                  );
+                },
+                child: Text(l10n.imageEdit),
+              ),
           ],
         ),
       ),
