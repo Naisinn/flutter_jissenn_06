@@ -1,0 +1,14 @@
+{
+  "startScreenTitle": "Edit Snap",
+  "helloWorldOn": "こんにちは!\n今日は{date}です",
+  "@helloWorldOn": {
+    "description": "開始画面に表示する挨拶文",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "MEd"
+      }
+    }
+  },
+  "start": "開始する"
+}
